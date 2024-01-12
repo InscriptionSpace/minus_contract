@@ -8,6 +8,7 @@ contract EtherBridge {
     //mapping(address=>uint256) public values;
     address public owner;
     address public operator;
+    bool public live = true;
 
     constructor() {
         owner = msg.sender;
@@ -22,6 +23,11 @@ contract EtherBridge {
     function change_operator(address new_operator) public {
         if (msg.sender == address(owner))
             operator = new_operator;
+    }
+
+    function shutdown() public {
+        if (msg.sender == address(owner))
+            live = false;
     }
 
     function lock() public payable {

@@ -9,6 +9,7 @@ contract Erc20Bridge {
     address public erc20_addr;
     address public owner;
     address public operator;
+    bool public live = true;
 
     constructor(address contract_addr) {
         erc20_addr = contract_addr;
@@ -26,16 +27,21 @@ contract Erc20Bridge {
             operator = new_operator;
     }
 
-    function lock() public payable {
-        require(msg.value > 0, "Must send some Ether to lock the value");
-        total += msg.value;
-        emit LockEvent(msg.sender, msg.value);
+    function shutdown() public {
+        if (msg.sender == address(owner))
+            live = false;
+    }
+
+    function lock() public {
+        //require(msg.value > 0, "Must send some Ether to lock the value");
+        //total += msg.value;
+        //emit LockEvent(msg.sender, msg.value);
     }
 
     function release(address payable recipient, uint256 amount) public {
         require(msg.sender == operator, "Only operator can release");
         require(total >= amount, "No enough locked value to send");
-        recipient.transfer(amount);
+        //recipient.transfer(amount);
         //values[recipient] = 0;
         total -= amount;
     }
