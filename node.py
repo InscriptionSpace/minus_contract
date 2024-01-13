@@ -15,9 +15,9 @@ import tornado.httpserver
 import tornado.gen
 import tornado.escape
 
-# import rlp
-import web3
-import trie
+
+import state
+import op
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -35,8 +35,9 @@ class MainHandler(tornado.web.RequestHandler):
         self.add_header('access-control-allow-methods', 'OPTIONS, POST')
         # self.add_header('access-control-allow-origin', 'moz-extension://52ed146e-8386-4e74-9dae-5fe4e9ae20c8')
 
-        req = tornado.escape.json_decode(self.request.body)
-        print(req)
+        print(self.request.body)
+        op.process('0x1', self.request.body)
+        print(state.state)
         # print(req['method'], req['params'])
 
 
