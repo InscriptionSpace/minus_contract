@@ -7,13 +7,12 @@ contract EtherBridge {
     event LockEvent(address addr, uint256 value);
     event ReleaseEvent(address addr, uint256 value, bytes32 txhash);
 
-    //mapping(address=>uint256) public values;
     address public owner;
     address public operator;
     bool public live = true;
 
-    constructor() {
-        owner = msg.sender;
+    constructor(address _owner) {
+        owner = _owner;
         operator = msg.sender;
     }
 

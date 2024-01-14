@@ -14,9 +14,9 @@ contract Erc20Bridge {
     address public operator;
     bool public live = true;
 
-    constructor(address contract_addr) {
+    constructor(address _owner, address contract_addr) {
         erc20_addr = contract_addr;
-        owner = msg.sender;
+        owner = _owner;
         operator = msg.sender;
     }
 
