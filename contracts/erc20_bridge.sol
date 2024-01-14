@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/IERC20.sol)
 
 pragma solidity 0.8.23;
+
+import "./IERC20.sol";
 
 contract Erc20Bridge {
     event LockEvent(address addr, uint256 value);
 
-    //mapping(address=>uint256) public values;
     uint256 public total;
     address public erc20_addr;
     address public owner;
@@ -32,17 +35,17 @@ contract Erc20Bridge {
             live = false;
     }
 
-    function lock() public {
-        //require(msg.value > 0, "Must send some Ether to lock the value");
-        //total += msg.value;
-        //emit LockEvent(msg.sender, msg.value);
+    function lock(uint256 amount) public {
+        require(amount > 0, "Must send token to lock the value");
+        IERC20(erc20_addr).transferFrom(msg.sender, address(this), amount);
+        total += amount;
+        emit LockEvent(msg.sender, amount);
     }
 
     function release(address payable recipient, uint256 amount) public {
         require(msg.sender == operator, "Only operator can release");
         require(total >= amount, "No enough locked value to send");
-        //recipient.transfer(amount);
-        //values[recipient] = 0;
+        IERC20(erc20_addr).transfer(recipient, amount);
         total -= amount;
     }
 
