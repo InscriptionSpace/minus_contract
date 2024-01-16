@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/IERC20.sol)
 
 pragma solidity ^0.8.20;
 
@@ -7,27 +6,27 @@ contract EtherBridge {
     event LockEvent(address addr, uint256 value);
     event ReleaseEvent(address addr, uint256 value, bytes32 txhash);
 
-    address public owner;
+    address public committee;
     address public operator;
     bool public live = true;
 
-    constructor(address _owner) {
-        owner = _owner;
+    constructor(address _committee) {
+        committee = _committee;
         operator = msg.sender;
     }
 
-    function change_owner(address new_owner) public {
-        if (msg.sender == address(owner))
-            owner = new_owner;
+    function change_committee(address new_committee) public {
+        if (msg.sender == address(committee))
+            committee = new_committee;
     }
 
     function change_operator(address new_operator) public {
-        if (msg.sender == address(owner))
+        if (msg.sender == address(committee))
             operator = new_operator;
     }
 
     function shutdown() public {
-        if (msg.sender == address(owner))
+        if (msg.sender == address(committee))
             live = false;
     }
 

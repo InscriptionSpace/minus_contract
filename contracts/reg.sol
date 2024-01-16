@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/IERC20.sol)
 
 pragma solidity ^0.8.20;
 
@@ -8,7 +7,7 @@ interface IBridge {
     function change_operator(address new_operator) external;
 }
 
-contract SymbolReg {
+contract MinusCommittee {
     address[] public committee;
     mapping(address=>address[]) public member_add_proposals;
     mapping(address=>address[]) public member_remove_proposals;
@@ -116,13 +115,18 @@ contract SymbolReg {
         }
         require(auth, "A member can vote to change operator");
 
+        int i = -1;
         for (uint p = 0; p < change_operator_proposals.length; p++) {
             if (change_operator_proposals[p].no == no) {
                 for (uint q = 0; q < change_operator_proposal_votes[no].length; q++) {
-                    return;
+                    if (change_operator_proposal_votes[no][q] == msg.sender) {
+                        return;
+                    }
                 }
+                i = int(p);
             }
         }
+        require(i >= 0, "Proposal not exists");
         change_operator_proposal_votes[no].push(msg.sender);
 
         if(change_operator_proposal_votes[no].length >= committee.length * 2 / 3){
