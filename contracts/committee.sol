@@ -45,7 +45,7 @@ contract MinusCommittee {
     }
     //fallback() external payable{}
 
-    function new_symbol_proposal(bytes calldata symbol, address addr) public {
+    function new_symbol_proposal(bytes calldata symbol, address addr) public returns(uint) {
         bool auth = false;
         for (uint p = 0; p < committee.length; p++) {
             if (committee[p] == msg.sender) {
@@ -56,8 +56,9 @@ contract MinusCommittee {
 
         proposal_no_counter += 1;
         symbol_proposals.push(Symbol(proposal_no_counter, symbol, addr));
+        return proposal_no_counter;
     }
-    function vote_symbol_proposal(bytes calldata symbol, address addr) public {
+    function vote_symbol_proposal(uint no) public {
         bool auth = false;
         for (uint p = 0; p < committee.length; p++) {
             if (committee[p] == msg.sender) {
@@ -66,10 +67,22 @@ contract MinusCommittee {
         }
         require(auth, "A member can propose to change operator");
 
-        symbols[symbol] = addr;
+        int i = -1;
+        for (uint p = 0; p < symbol_proposals.length; p++) {
+            if (symbol_proposals[p].no == no) {
+                for (uint q = 0; q < symbol_proposal_votes[no].length; q++) {
+                    if (symbol_proposal_votes[no][q] == msg.sender) {
+                        return;
+                    }
+                }
+                i = int(p);
+            }
+        }
+        require(i >= 0, "Proposal not exists");
+        symbol_proposal_votes[no].push(msg.sender);
     }
 
-    function new_code_proposal(bytes calldata op, bytes calldata code) public {
+    function new_code_proposal(bytes calldata op, bytes calldata code) public returns(uint) {
         bool auth = false;
         for (uint p = 0; p < committee.length; p++) {
             if (committee[p] == msg.sender) {
@@ -80,8 +93,9 @@ contract MinusCommittee {
 
         proposal_no_counter += 1;
         code_proposals.push(Code(proposal_no_counter, op, code));
+        return proposal_no_counter;
     }
-    function vote_code_proposal(bytes calldata op, address addr) public {
+    function vote_code_proposal(uint no) public {
         bool auth = false;
         for (uint p = 0; p < committee.length; p++) {
             if (committee[p] == msg.sender) {
@@ -90,6 +104,19 @@ contract MinusCommittee {
         }
         require(auth, "A member can propose to change operator");
 
+        int i = -1;
+        for (uint p = 0; p < code_proposals.length; p++) {
+            if (code_proposals[p].no == no) {
+                for (uint q = 0; q < code_proposal_votes[no].length; q++) {
+                    if (code_proposal_votes[no][q] == msg.sender) {
+                        return;
+                    }
+                }
+                i = int(p);
+            }
+        }
+        require(i >= 0, "Proposal not exists");
+        code_proposal_votes[no].push(msg.sender);
 
     }
 
