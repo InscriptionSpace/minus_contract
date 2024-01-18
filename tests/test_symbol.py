@@ -2,7 +2,7 @@
 from brownie import accounts as a
 from brownie import MinusCommittee, EtherBridge
 
-def test_code():
+def test_symbol():
     for i in MinusCommittee:
         MinusCommittee.remove(i)
     for i in EtherBridge:
