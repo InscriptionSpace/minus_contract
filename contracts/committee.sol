@@ -23,14 +23,14 @@ contract MinusCommittee {
     mapping(uint=>address[]) public symbol_proposal_votes;
     mapping(bytes=>address) public symbols;
 
-    struct Code {
-        uint no;
-        bytes op;
-        bytes code;
-    }
-    Code[] public code_proposals;
-    mapping(uint=>address[]) public code_proposal_votes;
-    mapping(bytes=>bytes) public codes;
+    // struct Code {
+    //     uint no;
+    //     bytes op;
+    //     bytes code;
+    // }
+    // Code[] public code_proposals;
+    // mapping(uint=>address[]) public code_proposal_votes;
+    // mapping(bytes=>bytes) public codes;
 
     struct ChangeOperator {
         uint no;
@@ -105,66 +105,66 @@ contract MinusCommittee {
         }
     }
 
-    function new_code_proposal(bytes calldata op, bytes calldata code) public returns(uint) {
-        bool auth = false;
-        for (uint p = 0; p < committee.length; p++) {
-            if (committee[p] == msg.sender) {
-                auth = true;
-            }
-        }
-        require(auth, "A member can propose to change operator");
-        //TODO: check the op code letter
+    // function new_code_proposal(bytes calldata op, bytes calldata code) public returns(uint) {
+    //     bool auth = false;
+    //     for (uint p = 0; p < committee.length; p++) {
+    //         if (committee[p] == msg.sender) {
+    //             auth = true;
+    //         }
+    //     }
+    //     require(auth, "A member can propose to change operator");
+    //     //TODO: check the op code letter
 
-        proposal_no_counter += 1;
-        code_proposals.push(Code(proposal_no_counter, op, code));
-        return proposal_no_counter;
-    }
-    function vote_code_proposal(uint no) public {
-        bool auth = false;
-        for (uint p = 0; p < committee.length; p++) {
-            if (committee[p] == msg.sender) {
-                auth = true;
-            }
-        }
-        require(auth, "A member can propose to change operator");
+    //     proposal_no_counter += 1;
+    //     code_proposals.push(Code(proposal_no_counter, op, code));
+    //     return proposal_no_counter;
+    // }
+    // function vote_code_proposal(uint no) public {
+    //     bool auth = false;
+    //     for (uint p = 0; p < committee.length; p++) {
+    //         if (committee[p] == msg.sender) {
+    //             auth = true;
+    //         }
+    //     }
+    //     require(auth, "A member can propose to change operator");
 
-        int i = -1;
-        for (uint p = 0; p < code_proposals.length; p++) {
-            if (code_proposals[p].no == no) {
-                for (uint q = 0; q < code_proposal_votes[no].length; q++) {
-                    if (code_proposal_votes[no][q] == msg.sender) {
-                        return;
-                    }
-                }
-                i = int(p);
-            }
-        }
-        require(i >= 0, "Proposal not exists");
-        code_proposal_votes[no].push(msg.sender);
+    //     int i = -1;
+    //     for (uint p = 0; p < code_proposals.length; p++) {
+    //         if (code_proposals[p].no == no) {
+    //             for (uint q = 0; q < code_proposal_votes[no].length; q++) {
+    //                 if (code_proposal_votes[no][q] == msg.sender) {
+    //                     return;
+    //                 }
+    //             }
+    //             i = int(p);
+    //         }
+    //     }
+    //     require(i >= 0, "Proposal not exists");
+    //     code_proposal_votes[no].push(msg.sender);
 
-        if(code_proposal_votes[no].length >= committee.length * 2 / 3){
-            for (uint p = 0; p < code_proposals.length; p++) {
-                if (code_proposals[p].no == no){
-                    bytes memory op = code_proposals[p].op;
-                    bytes memory code = code_proposals[p].code;
-                    codes[op] = code;
+    //     if(code_proposal_votes[no].length >= committee.length * 2 / 3){
+    //         for (uint p = 0; p < code_proposals.length; p++) {
+    //             if (code_proposals[p].no == no){
+    //                 bytes memory op = code_proposals[p].op;
+    //                 bytes memory code = code_proposals[p].code;
+    //                 codes[op] = code;
 
-                    if (p + 1 != code_proposals.length){
-                        code_proposals[p] = code_proposals[code_proposals.length-1];
-                    }
-                    code_proposals.pop();
+    //                 if (p + 1 != code_proposals.length){
+    //                     code_proposals[p] = code_proposals[code_proposals.length-1];
+    //                 }
+    //                 code_proposals.pop();
 
-                    // clean up code_proposal_votes[no]
-                    for (uint q = 0; q < code_proposal_votes[no].length; q++) {
-                        code_proposal_votes[no].pop();
-                    }
-                    delete code_proposal_votes[no];
+    //                 // clean up code_proposal_votes[no]
+    //                 for (uint q = 0; q < code_proposal_votes[no].length; q++) {
+    //                     code_proposal_votes[no].pop();
+    //                 }
+    //                 delete code_proposal_votes[no];
 
-                    return;
-                }
-            }
-        }
-    }
+    //                 return;
+    //             }
+    //         }
+    //     }
+    // }
 
     function new_change_operator_proposal(address bridge, address operator) public returns(uint) {
         bool auth = false;
