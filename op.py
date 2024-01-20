@@ -4,7 +4,7 @@ import state
 
 def mint(sender, d):
     assert d['p'] == 'minus'
-    assert d['op'] == 'mint'
+    assert d['f'] == 'mint'
     # assert len(d['tick']) == 4
     # assert int(d['max']) > 0
     # assert int(d['lim']) > 0
@@ -15,7 +15,7 @@ def mint(sender, d):
 
 def transfer(sender, d):
     assert d['p'] == 'minus'
-    assert d['op'] == 'transfer'
+    assert d['f'] == 'transfer'
     # assert len(d['tick']) == 4
     assert int(d['amt']) > 0
     assert state.state[sender] >= int(d['amt'])
@@ -23,13 +23,13 @@ def transfer(sender, d):
     state.state.setdefault(d['to'], 0)
     state.state[d['to']] += int(d['amt'])
 
-def process(sender, s):
-    d = json.loads(s)
+def process(sender, arg):
+    # d = json.loads(s)
     # print(s)
-    if d.get('op') == 'mint':
-        mint(sender, d)
-    elif d.get('op') == 'transfer':
-        transfer(sender, d)
+    if arg.get('f') == 'mint':
+        mint(sender, arg)
+    elif arg.get('f') == 'transfer':
+        transfer(sender, arg)
 
 # s = '''
 # { 
@@ -46,7 +46,7 @@ def process(sender, s):
 if __name__ == '__main__':
     d = { 
         "p": "minus",
-        "op": "transfer",
+        "f": "transfer",
         "tick": "USDT",
         "amt": "100",
         "to": "0x02"

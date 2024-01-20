@@ -35,8 +35,10 @@ class MainHandler(tornado.web.RequestHandler):
         self.add_header('access-control-allow-methods', 'OPTIONS, POST')
         # self.add_header('access-control-allow-origin', 'moz-extension://52ed146e-8386-4e74-9dae-5fe4e9ae20c8')
 
-        print(self.request.body)
-        op.process('0x1', self.request.body)
+        data = json.loads(self.request.body)
+        sender = data[0]
+        arg = data[1]
+        op.process(sender, arg)
         print(state.state)
         # print(req['method'], req['params'])
 

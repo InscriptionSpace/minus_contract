@@ -1,5 +1,6 @@
 import sys
 import time
+import json
 
 import web3
 import requests
@@ -191,7 +192,12 @@ while True:
         for tx_hash in block['transactions']:
             tx = w3.eth.get_transaction(tx_hash)
             print('  tx', tx['to'], w3.toBytes(hexstr=tx['input']))
-            requests.post('http://127.0.0.1:8010/', data=w3.toBytes(hexstr=tx['input']))
+            try:
+                arg = json.loads(w3.toBytes(hexstr=tx['input']))
+                data = json.dumps([tx['to'], arg])
+                requests.post('http://127.0.0.1:8010/', data=data.encode('utf8'))
+            except:
+                pass
 
         f = contract.events.LockEvent.createFilter(fromBlock='latest')
         for i in w3.eth.get_logs(f.filter_params):
