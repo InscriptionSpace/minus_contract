@@ -48,9 +48,6 @@ def resolve(sender, d):
 def reverse(sender, d):
     assert d['f'] == 'reverse'
 
-def mint(sender, d):
-    assert d['f'] == 'mint'
-
 # committee
 def committee_add_member(sender, d):
     assert d['f'] == 'committee_add_member'
@@ -72,7 +69,8 @@ def tick_vote(sender, d):
     assert d['f'] == 'tick_vote'
 
 def process(sender, arg):
-    assert d['p'] == 'minus'
+    assert arg['p'] == 'minus'
+    # print(sender, arg.get('f'))
     if arg.get('f') == 'mint':
         mint(sender, arg)
     elif arg.get('f') == 'transfer':
