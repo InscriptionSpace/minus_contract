@@ -1,4 +1,6 @@
 import json
+import hashlib
+import string
 
 import state
 
@@ -79,9 +81,34 @@ def committee_remove_member(sender, d):
 
 def code_propose(sender, d):
     assert d['f'] == 'code_propose'
+    fname = d['args'][0]
+    assert set(fname) - set(string.ascii_lowercase+'_') == set()
+    # bytecode = d['args'][1]
+    sourcecode = d['args'][1]
+    sourcecode_hexdigest = hashlib.sha256(sourcecode.encode('utf8')).hexdigest()
+    k = 'code_propose_%s:%s' % (fname, sourcecode_hexdigest)
+    state.state[k] = {'sourcecode': sourcecode, 'votes': []}
+
 
 def code_vote(sender, d):
     assert d['f'] == 'code_vote'
+    committee_members = set(state.state.get('committee_members', []))
+    assert sender in committee_members
+
+    fname = d['args'][0]
+    sourcecode_hexdigest = d['args'][1]
+    k = 'code_propose_%s:%s' % (fname, sourcecode_hexdigest)
+    votes = set(state.state[k]['votes'])
+    votes.add(sender)
+
+    print(len(votes), len(committee_members), len(committee_members)*2//3)
+    if len(votes) >= len(committee_members)*2//3:
+        state.state['code_function_%s' % fname] = state.state[k]
+        del state.state['code_function_%s' % fname]['votes']
+        del state.state[k]
+    else:
+        state.state[k]['votes'] = list(votes)
+
 
 def tick_propose(sender, d):
     assert d['f'] == 'tick_propose'
@@ -102,8 +129,11 @@ def process(sender, arg):
         committee_add_member(sender, arg)
     elif arg.get('f') == 'committee_remove_member':
         committee_remove_member(sender, arg)
-    elif arg.get('f') == 'transfer':
-        transfer(sender, arg)
+
+    elif arg.get('f') == 'code_propose':
+        code_propose(sender, arg)
+    elif arg.get('f') == 'code_vote':
+        code_vote(sender, arg)
 
 # s = '''
 # { 
