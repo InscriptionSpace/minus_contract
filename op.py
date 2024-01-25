@@ -49,9 +49,30 @@ def reverse(sender, d):
     assert d['f'] == 'reverse'
 
 # committee
+def committee_init(sender, d):
+    assert d['f'] == 'committee_init'
+    k = 'committee_members'
+    committee_members = state.state.get(k, [])
+    assert not committee_members
+    state.state[k] = [sender]
+
 def committee_add_member(sender, d):
     assert d['f'] == 'committee_add_member'
-    state.state.setdefault('committee_propose_%s' % d['args'][0], [sender])
+    committee_members = set(state.state.get('committee_members', []))
+    assert sender in committee_members
+
+    k = 'committee_propose_%s' % d['args'][0]
+    state.state.setdefault(k, [])
+    votes = set(state.state[k])
+    votes.add(sender)
+
+    print(len(votes), len(committee_members), len(committee_members)*2//3)
+    if len(votes) >= len(committee_members)*2//3:
+        committee_members.add(d['args'][0])
+        state.state['committee_members'] = list(committee_members)
+        del state.state[k]
+    else:
+        state.state[k] = list(votes)
 
 def committee_remove_member(sender, d):
     assert d['f'] == 'committee_remove_member'
@@ -73,6 +94,14 @@ def process(sender, arg):
     # print(sender, arg.get('f'))
     if arg.get('f') == 'mint':
         mint(sender, arg)
+    elif arg.get('f') == 'transfer':
+        transfer(sender, arg)
+    elif arg.get('f') == 'committee_init':
+        committee_init(sender, arg)
+    elif arg.get('f') == 'committee_add_member':
+        committee_add_member(sender, arg)
+    elif arg.get('f') == 'committee_remove_member':
+        committee_remove_member(sender, arg)
     elif arg.get('f') == 'transfer':
         transfer(sender, arg)
 
