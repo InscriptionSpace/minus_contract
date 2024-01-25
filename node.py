@@ -17,7 +17,7 @@ import tornado.escape
 
 
 import state
-import op
+import funcs
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -38,7 +38,7 @@ class MainHandler(tornado.web.RequestHandler):
         data = json.loads(self.request.body)
         sender = data[0]
         arg = data[1]
-        op.process(sender, arg)
+        funcs.process(sender, arg)
         print(state.state)
         # print(req['method'], req['params'])
 
