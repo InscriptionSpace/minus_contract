@@ -82,12 +82,25 @@ def committee_remove_member(sender, d):
 def code_propose(sender, d):
     assert d['f'] == 'code_propose'
     fname = d['args'][0]
-    assert set(fname) - set(string.ascii_lowercase+'_') == set()
-    # bytecode = d['args'][1]
+    assert set(fname) <= set(string.ascii_lowercase+'_')
     sourcecode = d['args'][1]
-    sourcecode_hexdigest = hashlib.sha256(sourcecode.encode('utf8')).hexdigest()
-    k = 'code_propose_%s:%s' % (fname, sourcecode_hexdigest)
-    state.state[k] = {'sourcecode': sourcecode, 'votes': []}
+    permission = d['args'][2]
+    print(permission)
+    assert type(permission) is list
+    for i in permission:
+        assert i == '*' or set(i) <= set(string.ascii_lowercase+'_')
+
+    require = d['args'][3]
+    for i in require:
+        assert type(i) is list
+        assert set(i[0]) <= set(string.ascii_lowercase+'_')
+        assert type(i[1]) is list
+        for j in i[1]:
+            assert set(j) <= set(string.ascii_uppercase+'_')
+
+    hexdigest = hashlib.sha256(sourcecode.encode('utf8')).hexdigest()
+    k = 'code_propose_%s:%s' % (fname, hexdigest)
+    state.state[k] = {'sourcecode': sourcecode, 'permission': permission, 'require': require, 'votes': []}
 
 
 def code_vote(sender, d):
