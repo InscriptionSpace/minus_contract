@@ -16,23 +16,32 @@ def hop(sender, d):
 
 def mint(sender, d):
     assert d['f'] == 'mint'
-    # assert len(d['tick']) == 4
-    # assert int(d['max']) > 0
-    # assert int(d['lim']) > 0
-    # assert int(d['max']) > int(d['lim'])
-    assert int(d['amt']) > 0
-    state.setdefault(sender, 0)
-    state[sender] += int(d['amt'])
+    assert set(d['args'][0]) <= set(string.ascii_uppercase+'_')
+    assert int(d['args'][1]) > 0
+    sender = sender.lower()
+    k = '%s-balance-%s' % (d['args'][0], sender)
+    state.setdefault(k, 0)
+    state[k] += int(d['args'][1])
 
 # assets related
 def transfer(sender, d):
     assert d['f'] == 'transfer'
-    # assert len(d['tick']) == 4
-    assert int(d['amt']) > 0
-    assert state[sender] >= int(d['amt'])
-    state[sender] -= int(d['amt'])
-    state.setdefault(d['to'], 0)
-    state[d['to']] += int(d['amt'])
+    asset = d['args'][0]
+    assert set(asset) <= set(string.ascii_uppercase+'_')
+    assert type(d['args'][1]) is str
+    sender = sender.lower()
+    to = d['args'][1].lower()
+    assert to.startswith('0x')
+    assert set(to[2:]) <= set(string.digits+'abcdef')
+    val = int(d['args'][2])
+    assert val > 0
+
+    k = '%s-balance-%s' % (asset, sender)
+    assert state[k] >= val
+    state[k] -= val
+    k = '%s-balance-%s' % (asset, to)
+    state.setdefault(k, 0)
+    state[k] += val
 
 def transfer_from(sender, d):
     assert d['f'] == 'transfer_from'
@@ -53,7 +62,7 @@ def reverse(sender, d):
 # committee
 def committee_init(sender, d):
     assert d['f'] == 'committee_init'
-    k = 'committee_members'
+    k = 'committee-members'
     committee_members = state.get(k, [])
     assert not committee_members
     state[k] = [sender]
@@ -63,7 +72,7 @@ def committee_add_member(sender, d):
     committee_members = set(state.get('committee_members', []))
     assert sender in committee_members
 
-    k = 'committee_propose_%s' % d['args'][0]
+    k = 'committee-propose-%s' % d['args'][0]
     state.setdefault(k, [])
     votes = set(state[k])
     votes.add(sender)
@@ -99,25 +108,25 @@ def function_propose(sender, d):
             assert set(j) <= set(string.ascii_uppercase+'_')
 
     hexdigest = hashlib.sha256(sourcecode.encode('utf8')).hexdigest()
-    k = 'function_propose_%s:%s' % (fname, hexdigest)
+    k = 'function-propose-%s:%s' % (fname, hexdigest)
     state[k] = {'sourcecode': sourcecode, 'permission': permission, 'require': require, 'votes': []}
 
 
 def function_vote(sender, d):
     assert d['f'] == 'function_vote'
-    committee_members = set(state.get('committee_members', []))
+    committee_members = set(state.get('committee-members', []))
     assert sender in committee_members
 
     fname = d['args'][0]
     sourcecode_hexdigest = d['args'][1]
-    k = 'function_propose_%s:%s' % (fname, sourcecode_hexdigest)
+    k = 'function-propose-%s:%s' % (fname, sourcecode_hexdigest)
     votes = set(state[k]['votes'])
     votes.add(sender)
 
     print(len(votes), len(committee_members), len(committee_members)*2//3)
     if len(votes) >= len(committee_members)*2//3:
-        state['function_code_%s' % fname] = state[k]
-        del state['function_code_%s' % fname]['votes']
+        state['function-code-%s' % fname] = state[k]
+        del state['function-code-%s' % fname]['votes']
         del state[k]
     else:
         state[k]['votes'] = list(votes)
@@ -132,11 +141,7 @@ def tick_vote(sender, d):
 def process(sender, arg):
     assert arg['p'] == 'minus'
     # print(sender, arg.get('f'))
-    if arg.get('f') == 'mint':
-        mint(sender, arg)
-    elif arg.get('f') == 'transfer':
-        transfer(sender, arg)
-    elif arg.get('f') == 'committee_init':
+    if arg.get('f') == 'committee_init':
         committee_init(sender, arg)
     elif arg.get('f') == 'committee_add_member':
         committee_add_member(sender, arg)
@@ -147,6 +152,15 @@ def process(sender, arg):
         function_propose(sender, arg)
     elif arg.get('f') == 'function_vote':
         function_vote(sender, arg)
+
+    # elif arg.get('f') == 'mint':
+    #     pass
+
+    elif arg.get('f') == 'mint':
+        print('mint')
+        mint(sender, arg)
+    elif arg.get('f') == 'transfer':
+        transfer(sender, arg)
 
 # s = '''
 # { 
