@@ -466,6 +466,18 @@ class VM:
             ctx.stack.append(val)
             ctx.pc += 2
 
+        elif co_code[ctx.pc] == 0x75: # IS_OP
+            param = co_code[ctx.pc+1]
+            a = ctx.stack.pop()
+            b = ctx.stack.pop()
+            # print('IS_OP', a, b)
+            if param == 1: # is not
+                ctx.stack.append(a is not b)
+            else: # is
+                ctx.stack.append(a is b)
+
+            ctx.pc += 2
+
         elif co_code[ctx.pc] == 0x7a: # SETUP_FINALLY
             param = co_code[ctx.pc+1]
             print('SETUP_FINALLY', param)
