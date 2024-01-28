@@ -2,7 +2,7 @@ import json
 import hashlib
 import string
 
-import state
+from state import state
 
 
 def bridge(sender, d):
@@ -21,18 +21,18 @@ def mint(sender, d):
     # assert int(d['lim']) > 0
     # assert int(d['max']) > int(d['lim'])
     assert int(d['amt']) > 0
-    state.state.setdefault(sender, 0)
-    state.state[sender] += int(d['amt'])
+    state.setdefault(sender, 0)
+    state[sender] += int(d['amt'])
 
 # assets related
 def transfer(sender, d):
     assert d['f'] == 'transfer'
     # assert len(d['tick']) == 4
     assert int(d['amt']) > 0
-    assert state.state[sender] >= int(d['amt'])
-    state.state[sender] -= int(d['amt'])
-    state.state.setdefault(d['to'], 0)
-    state.state[d['to']] += int(d['amt'])
+    assert state[sender] >= int(d['amt'])
+    state[sender] -= int(d['amt'])
+    state.setdefault(d['to'], 0)
+    state[d['to']] += int(d['amt'])
 
 def transfer_from(sender, d):
     assert d['f'] == 'transfer_from'
@@ -54,33 +54,33 @@ def reverse(sender, d):
 def committee_init(sender, d):
     assert d['f'] == 'committee_init'
     k = 'committee_members'
-    committee_members = state.state.get(k, [])
+    committee_members = state.get(k, [])
     assert not committee_members
-    state.state[k] = [sender]
+    state[k] = [sender]
 
 def committee_add_member(sender, d):
     assert d['f'] == 'committee_add_member'
-    committee_members = set(state.state.get('committee_members', []))
+    committee_members = set(state.get('committee_members', []))
     assert sender in committee_members
 
     k = 'committee_propose_%s' % d['args'][0]
-    state.state.setdefault(k, [])
-    votes = set(state.state[k])
+    state.setdefault(k, [])
+    votes = set(state[k])
     votes.add(sender)
 
     print(len(votes), len(committee_members), len(committee_members)*2//3)
     if len(votes) >= len(committee_members)*2//3:
         committee_members.add(d['args'][0])
-        state.state['committee_members'] = list(committee_members)
-        del state.state[k]
+        state['committee_members'] = list(committee_members)
+        del state[k]
     else:
-        state.state[k] = list(votes)
+        state[k] = list(votes)
 
 def committee_remove_member(sender, d):
     assert d['f'] == 'committee_remove_member'
 
-def code_propose(sender, d):
-    assert d['f'] == 'code_propose'
+def function_propose(sender, d):
+    assert d['f'] == 'function_propose'
     fname = d['args'][0]
     assert set(fname) <= set(string.ascii_lowercase+'_')
     sourcecode = d['args'][1]
@@ -99,28 +99,28 @@ def code_propose(sender, d):
             assert set(j) <= set(string.ascii_uppercase+'_')
 
     hexdigest = hashlib.sha256(sourcecode.encode('utf8')).hexdigest()
-    k = 'code_propose_%s:%s' % (fname, hexdigest)
-    state.state[k] = {'sourcecode': sourcecode, 'permission': permission, 'require': require, 'votes': []}
+    k = 'function_propose_%s:%s' % (fname, hexdigest)
+    state[k] = {'sourcecode': sourcecode, 'permission': permission, 'require': require, 'votes': []}
 
 
-def code_vote(sender, d):
-    assert d['f'] == 'code_vote'
-    committee_members = set(state.state.get('committee_members', []))
+def function_vote(sender, d):
+    assert d['f'] == 'function_vote'
+    committee_members = set(state.get('committee_members', []))
     assert sender in committee_members
 
     fname = d['args'][0]
     sourcecode_hexdigest = d['args'][1]
-    k = 'code_propose_%s:%s' % (fname, sourcecode_hexdigest)
-    votes = set(state.state[k]['votes'])
+    k = 'function_propose_%s:%s' % (fname, sourcecode_hexdigest)
+    votes = set(state[k]['votes'])
     votes.add(sender)
 
     print(len(votes), len(committee_members), len(committee_members)*2//3)
     if len(votes) >= len(committee_members)*2//3:
-        state.state['code_function_%s' % fname] = state.state[k]
-        del state.state['code_function_%s' % fname]['votes']
-        del state.state[k]
+        state['function_code_%s' % fname] = state[k]
+        del state['function_code_%s' % fname]['votes']
+        del state[k]
     else:
-        state.state[k]['votes'] = list(votes)
+        state[k]['votes'] = list(votes)
 
 
 def tick_propose(sender, d):
@@ -143,10 +143,10 @@ def process(sender, arg):
     elif arg.get('f') == 'committee_remove_member':
         committee_remove_member(sender, arg)
 
-    elif arg.get('f') == 'code_propose':
-        code_propose(sender, arg)
-    elif arg.get('f') == 'code_vote':
-        code_vote(sender, arg)
+    elif arg.get('f') == 'function_propose':
+        function_propose(sender, arg)
+    elif arg.get('f') == 'function_vote':
+        function_vote(sender, arg)
 
 # s = '''
 # { 
@@ -169,9 +169,9 @@ if __name__ == '__main__':
         "to": "0x02"
     }
 
-    state.state['0x1'] = 1000
+    state['0x1'] = 1000
     transfer('0x1', d)
-    print(state.state)
+    print(state)
 
     # print(mint.__code__.co_code.hex())
 
