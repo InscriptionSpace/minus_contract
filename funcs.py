@@ -1,7 +1,9 @@
 import json
 import hashlib
 import string
+import codeop
 
+import vm
 from state import state
 
 
@@ -141,6 +143,7 @@ def tick_vote(sender, d):
 def process(sender, arg):
     assert arg['p'] == 'minus'
     # print(sender, arg.get('f'))
+    k = 'function-code-%s' % arg.get('f', '')
     if arg.get('f') == 'committee_init':
         committee_init(sender, arg)
     elif arg.get('f') == 'committee_add_member':
@@ -153,13 +156,25 @@ def process(sender, arg):
     elif arg.get('f') == 'function_vote':
         function_vote(sender, arg)
 
-    # elif arg.get('f') == 'mint':
-    #     pass
+    elif state.get(k) is not None:
+        v = state[k]
+        print(v['sourcecode'])
+        c = codeop.compile_command(v['sourcecode'], symbol="exec")
+        f = c.co_consts[0]
+        # print(c.co_consts[0].co_code.hex())
+        print(c.co_consts[0].co_varnames)
+        print(c.co_consts[0].co_argcount)
+        v = vm.VM()
+        v.import_src(f)
+        v.global_vars['string'] = string
+        v.global_vars['state'] = state
+        v.run([sender, arg])
 
     elif arg.get('f') == 'mint':
-        print('mint')
+        print('native mint')
         mint(sender, arg)
     elif arg.get('f') == 'transfer':
+        print('native transfer')
         transfer(sender, arg)
 
 # s = '''
