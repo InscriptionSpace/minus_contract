@@ -146,8 +146,8 @@ def tick_vote(sender, d):
 
 def process(sender, arg):
     assert arg['p'] == 'minus'
-    # print(sender, arg.get('f'))
-    k = 'function-code-%s' % arg.get('f', '')
+    fname = arg.get('f', '')
+    code = get('function', 'code', None, fname)
     if arg.get('f') == 'committee_init':
         committee_init(sender, arg)
     elif arg.get('f') == 'committee_add_member':
@@ -160,10 +160,9 @@ def process(sender, arg):
     elif arg.get('f') == 'function_vote':
         function_vote(sender, arg)
 
-    elif state.get(k) is not None:
-        v = state[k]
-        print(v['sourcecode'])
-        c = codeop.compile_command(v['sourcecode'], symbol="exec")
+    elif code is not None:
+        print(code['sourcecode'])
+        c = codeop.compile_command(code['sourcecode'], symbol="exec")
         f = c.co_consts[0]
         # print(c.co_consts[0].co_code.hex())
         print(c.co_consts[0].co_varnames)
@@ -171,7 +170,12 @@ def process(sender, arg):
         v = vm.VM()
         v.import_src(f)
         v.global_vars['string'] = string
-        v.global_vars['state'] = state
+        v.global_vars['get'] = get
+        v.global_vars['put'] = put
+        v.global_vars['print'] = print
+        v.native_vars.add(get)
+        v.native_vars.add(put)
+        v.native_vars.add(print)
         v.run([sender, arg])
 
     elif arg.get('f') == 'mint':
@@ -196,6 +200,5 @@ def process(sender, arg):
 # mint('0x1', s)
 
 if __name__ == '__main__':
-
-    # print(mint.__code__.co_code.hex())
+    print(mint.__code__.co_code.hex())
 

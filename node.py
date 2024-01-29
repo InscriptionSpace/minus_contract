@@ -16,7 +16,6 @@ import tornado.gen
 import tornado.escape
 
 
-import state
 import funcs
 
 class Application(tornado.web.Application):
@@ -39,7 +38,6 @@ class MainHandler(tornado.web.RequestHandler):
         sender = data[0]
         arg = data[1]
         funcs.process(sender, arg)
-        print(state.state)
         # print(req['method'], req['params'])
 
 
