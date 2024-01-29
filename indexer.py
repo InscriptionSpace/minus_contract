@@ -5,8 +5,6 @@ import json
 import web3
 import requests
 
-import funcs
-import state
 
 ETH_BRIDGE_CONTRACT = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'
 ETH_BRIDGE_CONTRACT_ABI = '''[
@@ -174,27 +172,29 @@ for i in w3.eth.get_logs(f.filter_params):
     value = str(receipt_args['args']['value'])
     print('  receipt_args', addr, value)
 
-    state.state.setdefault(addr, 0)
-    state.state[addr] += int(value)
+    # state.state.setdefault(addr, 0)
+    # state.state[addr] += int(value)
 
     print('')
 
     c+=1
 print(c)
-print(state.state)
+# print(state.state)
 
 block_filter = w3.eth.filter('latest')
 while True:
     for block_hash in block_filter.get_new_entries():
         block = w3.eth.get_block(block_hash)
-        print('block', block['hash'].hex())
+        print('block', block.hash.hex())
         # print('block', block)
         for tx_hash in block['transactions']:
             tx = w3.eth.get_transaction(tx_hash)
-            print('  tx', tx['to'], w3.toBytes(hexstr=tx['input']))
+            # print('  tx', tx)
+            print('  tx', tx['from'], w3.toBytes(hexstr=tx['input']))
             try:
+                info = {'sender': tx['from'], 'block_number': block['number'], 'block_hash': block['hash'].hex(), 'chain': 'hardhat'}
                 arg = json.loads(w3.toBytes(hexstr=tx['input']))
-                data = json.dumps([tx['to'], arg])
+                data = json.dumps([info, arg])
                 requests.post('http://127.0.0.1:8010/', data=data.encode('utf8'))
             except:
                 pass

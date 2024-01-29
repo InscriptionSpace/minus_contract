@@ -28,12 +28,14 @@ def get_temp_conn():
 global_state = get_conn()
 pending_state = get_temp_conn()
 
+chain = None
 block_number = 0
 sender = None
 
 def put(_owner, _asset, _var, _value, _key = None):
     global global_state
     global pending_state
+    global chain
     global block_number
     global sender
 
@@ -50,13 +52,14 @@ def put(_owner, _asset, _var, _value, _key = None):
     addr = _owner.lower()
     value_json = tornado.escape.json_encode(_value)
     # console.log('globalstate_%s_%s_%s_%s' % (asset_name, var, addr, str(10**15 - block_number).zfill(16)), value_json)
-    k = 'globalstate-%s-%s-%s-%s' % (asset_name, var, str(10**15 - int(block_number)).zfill(16), addr)
-    print('put', k)
+    k = '%s-%s-%s-%s-%s' % (chain, asset_name, var, str(10**15 - int(block_number)).zfill(16), addr)
+    print('put', k, value_json)
     pending_state.put(k.encode('utf8'), value_json.encode('utf8'))
 
 
 def get(_asset, _var, _default = None, _key = None):
     global pending_state
+    global chain
     global block_number
     global sender
     #console.log(pending_state)
@@ -74,7 +77,7 @@ def get(_asset, _var, _default = None, _key = None):
     else:
         var = _var
 
-    k = 'globalstate-%s-%s-' % (asset_name, var)
+    k = '%s-%s-%s-' % (chain, asset_name, var)
     print('get1', k)
     it = pending_state.iteritems()
     it.seek(k.encode('utf8'))
@@ -90,7 +93,7 @@ def get(_asset, _var, _default = None, _key = None):
 
     # value_json = _trie.get(b'state_%s_%s' % (asset_name, var.encode('utf8')))
     for key, value_json in it:
-        if key.startswith(('globalstate-%s-%s-' % (asset_name, var)).encode('utf8')):
+        if key.startswith(k.encode('utf8')):
             # block_number = 10**15 - int(k.replace(b'%s_%s_' % (asset_name, var.encode('utf8')), b''))
             # console.log(k, value_json)
             # try:
@@ -109,8 +112,8 @@ def merge(_block_hash, _pending_state):
     # console.log('merge')
     for k, v in _pending_state.items():
         # console.log(k,v)
-        _, asset_name, var, block_number, addr = k.split('_')
-        global_state.put(('globalstate-%s-%s-%s-%s-%s' % (asset_name, var, str(10**15 - int(block_number)).zfill(16), _block_hash, addr)).encode('utf8'), v.encode('utf8'))
+        chain, asset_name, var, block_number, addr = k.split('_')
+        global_state.put(('%s-%s-%s-%s-%s-%s' % (chain, asset_name, var, str(10**15 - int(block_number)).zfill(16), _block_hash, addr)).encode('utf8'), v.encode('utf8'))
 
     pending_state = get_temp_conn()
 
@@ -142,6 +145,3 @@ def call(_addr, fn, params):
     return
 
 
-if __name__ == '__main__':
-    state['abc'] = 0
-    print(state['abc'])

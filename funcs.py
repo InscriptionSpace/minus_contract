@@ -4,7 +4,7 @@ import string
 import codeop
 
 import vm
-# from space import state
+import space
 from space import get
 from space import put
 
@@ -144,7 +144,13 @@ def tick_proposal(sender, d):
 def tick_vote(sender, d):
     assert d['f'] == 'tick_vote'
 
-def process(sender, arg):
+def process(info, arg):
+    sender = info['sender']
+    block_number = info['block_number']
+    space.block_number = block_number
+    # block_hash = info['block_hash']
+    chain = info['chain']
+    space.chain = chain
     assert arg['p'] == 'minus'
     fname = arg.get('f', '')
     code = get('function', 'code', None, fname)
