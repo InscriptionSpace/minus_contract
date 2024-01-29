@@ -1,32 +1,11 @@
-import os
 
-import rocksdb
 import tornado
 
-
-conn = None
-def get_conn():
-    global conn
-    if conn:
-        return conn
-
-    if not os.path.exists('states'):
-        os.makedirs('states')
-    conn = rocksdb.DB('states/inspace.db', rocksdb.Options(create_if_missing=True))
-    return conn
+import database
 
 
-# os.removedirs('/dev/shm/tempspace.db')
-temp_conn = None
-def get_temp_conn():
-    global temp_conn
-
-    temp_conn = rocksdb.DB('/dev/shm/tempspace.db', rocksdb.Options(create_if_missing=True))
-    return temp_conn
-
-
-global_state = get_conn()
-pending_state = get_temp_conn()
+global_state = database.get_conn()
+pending_state = database.get_temp_conn()
 
 chain = None
 block_number = 0
@@ -106,16 +85,19 @@ def get(_asset, _var, _default = None, _key = None):
     return value
 
 
-def merge(_block_hash, _pending_state):
+def merge(_block_hash):
     global global_state
     global pending_state
-    # console.log('merge')
-    for k, v in _pending_state.items():
-        # console.log(k,v)
-        chain, asset_name, var, block_number, addr = k.split('_')
-        global_state.put(('%s-%s-%s-%s-%s-%s' % (chain, asset_name, var, str(10**15 - int(block_number)).zfill(16), _block_hash, addr)).encode('utf8'), v.encode('utf8'))
+    print('merge')
+    it = pending_state.iteritems()
+    it.seek_to_first()
+    for k, v in it:
+        print(k, v)
+        chain, asset_name, var, block_number, addr = k.split(b'-')
+        global_state.put(b'%s-%s-%s-%s-%s-%s' % (chain, asset_name, var, str(10**15 - int(block_number)).zfill(16).encode('utf8'), _block_hash.encode('utf8'), addr), v)
+        pending_state.delete(k)
 
-    pending_state = get_temp_conn()
+    # pending_state = database.get_temp_conn()
 
 
 def call(_addr, fn, params):

@@ -148,7 +148,7 @@ def process(info, arg):
     sender = info['sender']
     block_number = info['block_number']
     space.block_number = block_number
-    # block_hash = info['block_hash']
+    block_hash = info['block_hash']
     chain = info['chain']
     space.chain = chain
     assert arg['p'] == 'minus'
@@ -183,6 +183,7 @@ def process(info, arg):
         v.native_vars.add(put)
         v.native_vars.add(print)
         v.run([sender, arg])
+        space.merge(block_hash)
 
     elif arg.get('f') == 'mint':
         print('native mint')
