@@ -40,9 +40,9 @@ def main():
     a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'committee_init'}).encode())
     a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'committee_add_member', 'args': [a[0].address]}).encode())
 
-    a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'function_propose', 'args': ['mint', mint_src, ['*'], [['mint', ['USDT_']]]]}).encode())
+    a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'function_proposal', 'args': ['mint', mint_src, ['*'], [['mint', ['USDT_']]]]}).encode())
     a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'function_vote', 'args': ['mint', hashlib.sha256(mint_src.encode('utf8')).hexdigest()]}).encode())
-    a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'function_propose', 'args': ['transfer', transfer_src, ['*'], [['mint', ['USDT_']]]]}).encode())
+    a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'function_proposal', 'args': ['transfer', transfer_src, ['*'], [['mint', ['USDT_']]]]}).encode())
     a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'function_vote', 'args': ['transfer', hashlib.sha256(transfer_src.encode('utf8')).hexdigest()]}).encode())
 
     a[0].transfer(a[0], 10**18, gas_price=875000000, data=json.dumps({'p':'minus', 'f':'mint', 'args': ['U', 100]}).encode())
