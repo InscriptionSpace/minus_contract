@@ -1,0 +1,11 @@
+<html>
+<head></head>
+<body>
+    Recent blocks<br>
+    {% for block_height, block_hash in handler.recent_blocks %}
+    {{ block_height }} <a href="/block?blockhash={{ block_hash }}">{{ block_hash }}</a><br>
+    {% end for %}
+    <br><br>
+    Recent transactions<br>
+</body>
+</html>

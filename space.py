@@ -57,12 +57,12 @@ def get(_asset, _var, _default = None, _key = None):
         var = _var
 
     k = '%s-%s-%s-' % (chain, asset_name, var)
-    print('get1', k)
     it = pending_state.iteritems()
     it.seek(k.encode('utf8'))
     for key, value_json in it:
         if key.startswith(k.encode('utf8')):
             value = tornado.escape.json_decode(value_json)
+            print('get1', k, value)
             return value
         break
 
@@ -81,7 +81,7 @@ def get(_asset, _var, _default = None, _key = None):
             #     pass
         break
 
-    print('get2', value)
+    print('get2', k, value)
     return value
 
 
@@ -94,7 +94,7 @@ def merge(_block_hash):
     for k, v in it:
         print(k, v)
         chain, asset_name, var, block_number, addr = k.split(b'-')
-        global_state.put(b'%s-%s-%s-%s-%s-%s' % (chain, asset_name, var, str(10**15 - int(block_number)).zfill(16).encode('utf8'), _block_hash.encode('utf8'), addr), v)
+        global_state.put(b'%s-%s-%s-%s-%s-%s' % (chain, asset_name, var, block_number, _block_hash.encode('utf8'), addr), v)
         pending_state.delete(k)
 
     # pending_state = database.get_temp_conn()

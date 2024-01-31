@@ -9,8 +9,20 @@ from space import get
 from space import put
 
 
-def bridge(sender, d):
-    assert d['f'] == 'bridge'
+def usdt_deposit(sender, d):
+    assert d['f'] == 'usdt_deposit'
+
+def eth_deposit(sender, d):
+    assert d['f'] == 'eth_deposit'
+    value = int(d['args'][0])
+    assert value > 0
+    sender = sender.lower()
+    balance = get('eth', 'balance', 0, sender)
+    balance += value
+    put(sender, 'eth', 'balance', balance, sender)
+
+def withdraw(sender, d):
+    assert d['f'] == 'withdraw'
 
 def hop(sender, d):
     assert d['f'] == 'hop'
@@ -138,11 +150,11 @@ def function_vote(sender, d):
         put(sender, 'function', 'proposal', proposal, '%s:%s' % (fname, sourcecode_hexdigest))
 
 
-def tick_proposal(sender, d):
-    assert d['f'] == 'tick_proposal'
+def token_proposal(sender, d):
+    assert d['f'] == 'token_proposal'
 
-def tick_vote(sender, d):
-    assert d['f'] == 'tick_vote'
+def token_vote(sender, d):
+    assert d['f'] == 'token_vote'
 
 def process(info, arg):
     sender = info['sender']

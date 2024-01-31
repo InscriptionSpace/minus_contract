@@ -45,12 +45,12 @@ class VM:
     def import_src(self, src):
         self.contexts = []
         # print(dir(src))
-        print(src.co_code)
+        # print(src.co_code)
 
         self.code = src
 
     def invoke(self, func, args):
-        print(func, args)
+        # print(func, args)
         # dis.dis(func.__code__.co_code)
         if type(func) == type or func in self.native_vars:
             result = functools.partial(func, *args)()

@@ -13,6 +13,16 @@ def get_conn():
     conn = rocksdb.DB('states/inspace.db', rocksdb.Options(create_if_missing=True))
     return conn
 
+conn_tx = None
+def get_conn_tx():
+    global conn_tx
+    if conn_tx:
+        return conn_tx
+
+    if not os.path.exists('states'):
+        os.makedirs('states')
+    conn_tx = rocksdb.DB('states/tx.db', rocksdb.Options(create_if_missing=True))
+    return conn_tx
 
 # os.removedirs('/dev/shm/tempspace.db')
 temp_conn = None

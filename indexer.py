@@ -6,10 +6,16 @@ import web3
 import requests
 
 
-ETH_BRIDGE_CONTRACT = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'
+ETH_BRIDGE_CONTRACT = '0xb27A9f32de9DA255bb87AEb9fe934a3Acbdea3D6'
 ETH_BRIDGE_CONTRACT_ABI = '''[
     {
-      "inputs": [],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_committee",
+          "type": "address"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "constructor"
     },
@@ -61,6 +67,19 @@ ETH_BRIDGE_CONTRACT_ABI = '''[
       "inputs": [
         {
           "internalType": "address",
+          "name": "new_committee",
+          "type": "address"
+        }
+      ],
+      "name": "change_committee",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
           "name": "new_operator",
           "type": "address"
         }
@@ -71,28 +90,8 @@ ETH_BRIDGE_CONTRACT_ABI = '''[
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "new_owner",
-          "type": "address"
-        }
-      ],
-      "name": "change_owner",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
       "inputs": [],
-      "name": "lock",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "operator",
+      "name": "committee",
       "outputs": [
         {
           "internalType": "address",
@@ -105,7 +104,27 @@ ETH_BRIDGE_CONTRACT_ABI = '''[
     },
     {
       "inputs": [],
-      "name": "owner",
+      "name": "live",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lock",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "operator",
       "outputs": [
         {
           "internalType": "address",
@@ -135,6 +154,13 @@ ETH_BRIDGE_CONTRACT_ABI = '''[
         }
       ],
       "name": "release",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "shutdown",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -182,11 +208,13 @@ print(c)
 # print(state.state)
 
 block_filter = w3.eth.filter('latest')
+bridge_filter = contract.events.LockEvent.createFilter(fromBlock='latest')
+
 while True:
     for block_hash in block_filter.get_new_entries():
         block = w3.eth.get_block(block_hash)
         print('block', block.hash.hex())
-        # print('block', block)
+        print('block', block)
         for tx_hash in block['transactions']:
             tx = w3.eth.get_transaction(tx_hash)
             # print('  tx', tx)
@@ -199,17 +227,24 @@ while True:
             except:
                 pass
 
-        f = contract.events.LockEvent.createFilter(fromBlock='latest')
-        for i in w3.eth.get_logs(f.filter_params):
-            # print('  event', i)
-            tx_hash = i['transactionHash'].hex()
-            receipt = w3.eth.get_transaction_receipt(tx_hash)
-            # if receipt['from'] == ETH_BRIDGE_CONTRACT or receipt['to'] == ETH_BRIDGE_CONTRACT:
-            # print('  receipt', receipt)
-            receipt_args, = contract.events.LockEvent().processReceipt(receipt)
-            # print('  receipt_args', receipt_args)
-            addr = receipt_args['args']['addr']
-            value = str(receipt_args['args']['value'])
-            print('  receipt_args', addr, value)
+    # print(w3.eth.get_logs(f.get_new_entries()))
+    # for i in w3.eth.get_logs(f.filter_params):
+    for i in bridge_filter.get_new_entries():
+        tx_hash = i['transactionHash'].hex()
+        print('  event', tx_hash)
+        receipt = w3.eth.get_transaction_receipt(tx_hash)
+        # if receipt['from'] == ETH_BRIDGE_CONTRACT or receipt['to'] == ETH_BRIDGE_CONTRACT:
+        # print('  receipt', receipt)
+        receipt_args, = contract.events.LockEvent().processReceipt(receipt)
+        # print('  receipt_args', receipt_args)
+        addr = receipt_args['args']['addr']
+        value = str(receipt_args['args']['value'])
+        print('    receipt_args', addr, value)
+
+        info = {'sender': tx['from'], 'block_number': block['number'], 'block_hash': block['hash'].hex(), 'chain': 'hardhat'}
+        # arg = json.loads(w3.toBytes(hexstr=tx['input']))
+        arg = {'p': 'minus', 'f': 'eth_deposit', 'args': [value]}
+        data = json.dumps([info, arg])
+        requests.post('http://127.0.0.1:8010/', data=data.encode('utf8'))
 
     time.sleep(2)
