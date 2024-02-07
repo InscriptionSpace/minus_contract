@@ -1,13 +1,36 @@
-import json
+# import json
 import hashlib
 import string
 import codeop
 
+import setting
+import database
 import vm
 import space
 from space import get
 from space import put
 
+global_input = database.get_conn_tx()
+
+def hop(info, d):
+    assert d['f'] == 'hop'
+    sender = info['sender']
+    from_chain = info['chain']
+    from_txhash = info['tx_hash']
+
+    chain = d['args'][0]
+    assert chain in setting.chains
+    block_number = int(d['args'][1])
+    asset = d['args'][3]
+    assert asset in setting.assets
+    value = int(d['args'][3])
+    assert value > 0
+    balance = get(asset, 'balance', 0, sender)
+    balance -= value
+    assert balance >= 0
+    put(sender, asset, 'balance', balance, sender)
+
+    global_input.put(('%s-inject-%s-%s-%s' % (chain, block_number, from_chain, from_txhash)).encode('utf8'), b'[]')
 
 def usdt_deposit(sender, d):
     assert d['f'] == 'usdt_deposit'
@@ -21,11 +44,8 @@ def eth_deposit(sender, d):
     balance += value
     put(sender, 'eth', 'balance', balance, sender)
 
-def withdraw(sender, d):
-    assert d['f'] == 'withdraw'
-
-def hop(sender, d):
-    assert d['f'] == 'hop'
+# def withdraw(sender, d):
+#     assert d['f'] == 'withdraw'
 
 # def deploy(sender, d):
 #     assert d['f'] == 'deploy'
@@ -183,6 +203,9 @@ def process(info, arg):
         function_proposal(sender, arg)
     elif arg.get('f') == 'function_vote':
         function_vote(sender, arg)
+
+    elif arg.get('f') == 'hop':
+        hop(info, arg)
 
     elif code is not None:
         print(code['sourcecode'])

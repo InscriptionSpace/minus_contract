@@ -14,11 +14,12 @@ import tornado.httpserver
 import tornado.gen
 import tornado.escape
 
+import setting
 import database
 import funcs
 
 global_state = database.get_conn()
-block_tx = database.get_conn_tx()
+global_input = database.get_conn_tx()
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -35,8 +36,8 @@ class Application(tornado.web.Application):
 class BlocksHandler(tornado.web.RequestHandler):
     def get(self):
         global global_state
-        global block_tx
-        it = block_tx.iteritems()
+        global global_input
+        it = global_input.iteritems()
 
         it.seek(b'hardhat-block-')
         self.recent_blocks = []
@@ -46,7 +47,7 @@ class BlocksHandler(tornado.web.RequestHandler):
                 break
             # self.write('%s %s<br>' % (key, value_json))
             _, _, block_height, block_hash = key.decode('utf8').split('-')
-            self.recent_blocks.append([10**15-int(block_height), block_hash])
+            self.recent_blocks.append([setting.REVERSED_NO-int(block_height), block_hash])
 
         it.seek(b'hardhat-tx-')
         self.recent_transactions = []
@@ -63,8 +64,8 @@ class BlockHandler(tornado.web.RequestHandler):
     def get(self):
         block_hash = self.get_argument('blockhash')
         global global_state
-        global block_tx
-        it = block_tx.iteritems()
+        global global_input
+        it = global_input.iteritems()
 
         it.seek(b'hardhat-blocktx-%s' % block_hash.encode('utf8'))
         self.txs = []
@@ -82,9 +83,9 @@ class TxHandler(tornado.web.RequestHandler):
     def get(self):
         tx_hash = self.get_argument('txhash')
         global global_state
-        global block_tx
+        global global_input
 
-        it = block_tx.iteritems()
+        it = global_input.iteritems()
         it.seek(b'hardhat-tx-%s' % tx_hash.encode('utf8'))
         self.txs = []
         for key, value_json in it:
@@ -104,10 +105,10 @@ class MainHandler(tornado.web.RequestHandler):
     def post(self):
         # self.add_header('access-control-allow-methods', 'OPTIONS, POST')
         # self.add_header('access-control-allow-origin', 'moz-extension://52ed146e-8386-4e74-9dae-5fe4e9ae20c8')
+        global global_input
 
         blk = json.loads(self.request.body)
-        conn = database.get_conn_tx()
-        conn.put(('%s-block-%s-%s' % (blk['chain'], 10**15 - blk['block_number'], blk['block_hash'])).encode('utf8'), b'[]')
+        global_input.put(('%s-block-%s-%s' % (blk['chain'], setting.REVERSED_NO - blk['block_number'], blk['block_hash'])).encode('utf8'), b'[]')
         # print(txs)
         for data in blk['txs']:
             print(data)
@@ -116,8 +117,8 @@ class MainHandler(tornado.web.RequestHandler):
             info['block_hash'] = blk['block_hash']
             info['chain'] = blk['chain']
             arg = data[1]
-            conn.put(('%s-blocktx-%s-%s' % (blk['chain'], blk['block_hash'], info['tx_hash'])).encode('utf8'), b'[]')
-            conn.put(('%s-tx-%s-%s' % (blk['chain'], info['tx_hash'], blk['block_hash'])).encode('utf8'), b'[]')
+            global_input.put(('%s-blocktx-%s-%s' % (blk['chain'], blk['block_hash'], info['tx_hash'])).encode('utf8'), b'[]')
+            global_input.put(('%s-tx-%s-%s' % (blk['chain'], info['tx_hash'], blk['block_hash'])).encode('utf8'), b'[]')
             try:
                 funcs.process(info, arg)
             except:

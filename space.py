@@ -1,6 +1,7 @@
 
 import tornado
 
+import setting
 import database
 
 
@@ -30,8 +31,8 @@ def put(_owner, _asset, _var, _value, _key = None):
     asset_name = _asset
     addr = _owner.lower()
     value_json = tornado.escape.json_encode(_value)
-    # console.log('globalstate_%s_%s_%s_%s' % (asset_name, var, addr, str(10**15 - block_number).zfill(16)), value_json)
-    k = '%s-%s-%s-%s-%s' % (chain, asset_name, var, str(10**15 - int(block_number)).zfill(16), addr)
+    # console.log('globalstate_%s_%s_%s_%s' % (asset_name, var, addr, str(setting.REVERSED_NO - block_number).zfill(16)), value_json)
+    k = '%s-%s-%s-%s-%s' % (chain, asset_name, var, str(setting.REVERSED_NO - int(block_number)).zfill(16), addr)
     print('put', k, value_json)
     pending_state.put(k.encode('utf8'), value_json.encode('utf8'))
 
@@ -73,7 +74,7 @@ def get(_asset, _var, _default = None, _key = None):
     # value_json = _trie.get(b'state_%s_%s' % (asset_name, var.encode('utf8')))
     for key, value_json in it:
         if key.startswith(k.encode('utf8')):
-            # block_number = 10**15 - int(k.replace(b'%s_%s_' % (asset_name, var.encode('utf8')), b''))
+            # block_number = setting.REVERSED_NO - int(k.replace(b'%s_%s_' % (asset_name, var.encode('utf8')), b''))
             # console.log(k, value_json)
             # try:
             value = tornado.escape.json_decode(value_json)

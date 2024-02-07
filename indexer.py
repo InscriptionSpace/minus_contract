@@ -5,6 +5,8 @@ import json
 import web3
 import requests
 
+PROVIDER_HOST = 'http://127.0.0.1:8545'
+CHAIN_NAME = 'hardhat'
 
 ETH_BRIDGE_CONTRACT = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
 ETH_BRIDGE_CONTRACT_ABI = '''[
@@ -168,7 +170,7 @@ ETH_BRIDGE_CONTRACT_ABI = '''[
   ]'''
 
 #w3 = web3.Web3(web3.Web3.HTTPProvider('https://mainnet.infura.io/v3/31e7bd03dc644095ab751f082b17b395'))
-w3 = web3.Web3(web3.Web3.HTTPProvider('http://127.0.0.1:8545'))
+w3 = web3.Web3(web3.Web3.HTTPProvider(PROVIDER_HOST))
 contract = w3.eth.contract(address=ETH_BRIDGE_CONTRACT, abi=ETH_BRIDGE_CONTRACT_ABI)
 
 f = contract.events.LockEvent.createFilter(fromBlock='0x0')
@@ -210,7 +212,7 @@ block_filter = w3.eth.filter('latest')
 while True:
     for block_hash in block_filter.get_new_entries():
         block = w3.eth.get_block(block_hash)
-        blk = {'txs': [], 'block_number': block['number'], 'block_hash': block['hash'].hex(), 'chain': 'hardhat'}
+        blk = {'txs': [], 'block_number': block['number'], 'block_hash': block['hash'].hex(), 'chain': CHAIN_NAME}
         print('block', block.hash.hex())
         # print('block', block)
         for tx_hash in block['transactions']:
