@@ -6,7 +6,7 @@ import web3
 import requests
 
 
-ETH_BRIDGE_CONTRACT = '0xb27A9f32de9DA255bb87AEb9fe934a3Acbdea3D6'
+ETH_BRIDGE_CONTRACT = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
 ETH_BRIDGE_CONTRACT_ABI = '''[
     {
       "inputs": [
@@ -198,53 +198,53 @@ for i in w3.eth.get_logs(f.filter_params):
     value = str(receipt_args['args']['value'])
     print('  receipt_args', addr, value)
 
-    # state.state.setdefault(addr, 0)
-    # state.state[addr] += int(value)
-
     print('')
-
     c+=1
+
 print(c)
 # print(state.state)
 
 block_filter = w3.eth.filter('latest')
-bridge_filter = contract.events.LockEvent.createFilter(fromBlock='latest')
+# bridge_filter = contract.events.LockEvent.createFilter(fromBlock='latest')
 
 while True:
     for block_hash in block_filter.get_new_entries():
         block = w3.eth.get_block(block_hash)
+        blk = {'txs': [], 'block_number': block['number'], 'block_hash': block['hash'].hex(), 'chain': 'hardhat'}
         print('block', block.hash.hex())
-        print('block', block)
+        # print('block', block)
         for tx_hash in block['transactions']:
             tx = w3.eth.get_transaction(tx_hash)
             # print('  tx', tx)
             print('  tx', tx['from'], w3.toBytes(hexstr=tx['input']))
             try:
-                info = {'sender': tx['from'], 'block_number': block['number'], 'block_hash': block['hash'].hex(), 'chain': 'hardhat'}
+                info = {'sender': tx['from'], 'tx_hash': tx_hash.hex()}
                 arg = json.loads(w3.toBytes(hexstr=tx['input']))
-                data = json.dumps([info, arg])
-                requests.post('http://127.0.0.1:8010/', data=data.encode('utf8'))
+                blk['txs'].append([info, arg])
             except:
                 pass
 
-    # print(w3.eth.get_logs(f.get_new_entries()))
-    # for i in w3.eth.get_logs(f.filter_params):
-    for i in bridge_filter.get_new_entries():
-        tx_hash = i['transactionHash'].hex()
-        print('  event', tx_hash)
-        receipt = w3.eth.get_transaction_receipt(tx_hash)
-        # if receipt['from'] == ETH_BRIDGE_CONTRACT or receipt['to'] == ETH_BRIDGE_CONTRACT:
-        # print('  receipt', receipt)
-        receipt_args, = contract.events.LockEvent().processReceipt(receipt)
-        # print('  receipt_args', receipt_args)
-        addr = receipt_args['args']['addr']
-        value = str(receipt_args['args']['value'])
-        print('    receipt_args', addr, value)
+        bridge_filter = contract.events.LockEvent.createFilter(fromBlock=block['number'], toBlock=block['number'])
 
-        info = {'sender': tx['from'], 'block_number': block['number'], 'block_hash': block['hash'].hex(), 'chain': 'hardhat'}
-        # arg = json.loads(w3.toBytes(hexstr=tx['input']))
-        arg = {'p': 'minus', 'f': 'eth_deposit', 'args': [value]}
-        data = json.dumps([info, arg])
-        requests.post('http://127.0.0.1:8010/', data=data.encode('utf8'))
+        # for i in bridge_filter.get_new_entries():
+        for i in w3.eth.get_logs(bridge_filter.filter_params):
+            tx_hash = i['transactionHash'].hex()
+            print('  event', tx_hash)
+            receipt = w3.eth.get_transaction_receipt(tx_hash)
+            # if receipt['from'] == ETH_BRIDGE_CONTRACT or receipt['to'] == ETH_BRIDGE_CONTRACT:
+            # print('  receipt', receipt)
+            receipt_args, = contract.events.LockEvent().processReceipt(receipt)
+            # print('  receipt_args', receipt_args)
+            addr = receipt_args['args']['addr']
+            value = str(receipt_args['args']['value'])
+            print('    receipt_args', addr, value)
+
+            info = {'sender': tx['from'], 'tx_hash': tx_hash, 'invoke': 'event'}
+            arg = {'p': 'minus', 'f': 'eth_deposit', 'args': [value]}
+            blk['txs'].append([info, arg])
+
+        if blk['txs']:
+            data = json.dumps(blk)
+            requests.post('http://127.0.0.1:8010/', data=data.encode('utf8'))
 
     time.sleep(2)

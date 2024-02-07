@@ -111,13 +111,8 @@ def function_proposal(sender, d):
     fname = d['args'][0]
     assert set(fname) <= set(string.ascii_lowercase+'_')
     sourcecode = d['args'][1]
-    permission = d['args'][2]
-    print(permission)
-    assert type(permission) is list
-    for i in permission:
-        assert i == '*' or set(i) <= set(string.ascii_lowercase+'_')
 
-    require = d['args'][3]
+    require = d['args'][2]
     for i in require:
         assert type(i) is list
         assert set(i[0]) <= set(string.ascii_lowercase+'_')
@@ -125,9 +120,19 @@ def function_proposal(sender, d):
         for j in i[1]:
             assert set(j) <= set(string.ascii_uppercase+'_')
 
+    asset_permission = d['args'][3]
+    assert type(asset_permission) is list
+    for i in asset_permission:
+        assert i == '*' or set(i) <= set(string.ascii_lowercase+'_')
+
+    invoke_permission = d['args'][4]
+    assert type(invoke_permission) is list
+    for i in invoke_permission:
+        assert i == '*' or set(i) <= set(string.ascii_lowercase+'_')
+
     hexdigest = hashlib.sha256(sourcecode.encode('utf8')).hexdigest()
     k = 'function-proposal-%s:%s' % (fname, hexdigest)
-    put(sender, 'function', 'proposal', {'sourcecode': sourcecode, 'permission': permission, 'require': require, 'votes': []}, '%s:%s' % (fname, hexdigest))
+    put(sender, 'function', 'proposal', {'sourcecode': sourcecode, 'asset_permission': asset_permission, 'require': require, 'votes': []}, '%s:%s' % (fname, hexdigest))
 
 
 def function_vote(sender, d):
@@ -164,6 +169,7 @@ def process(info, arg):
     chain = info['chain']
     space.chain = chain
     assert arg['p'] == 'minus'
+
     fname = arg.get('f', '')
     code = get('function', 'code', None, fname)
     if arg.get('f') == 'committee_init':
@@ -197,9 +203,15 @@ def process(info, arg):
         v.run([sender, arg])
         space.merge(block_hash)
 
+    elif arg.get('f') == 'eth_deposit':
+        print('native eth_deposit')
+        assert info['invoke'] == 'event'
+        eth_deposit(sender, arg)
+
     elif arg.get('f') == 'mint':
         print('native mint')
         mint(sender, arg)
+
     elif arg.get('f') == 'transfer':
         print('native transfer')
         transfer(sender, arg)

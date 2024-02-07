@@ -37,12 +37,26 @@ class BlocksHandler(tornado.web.RequestHandler):
         global global_state
         global block_tx
         it = block_tx.iteritems()
-        it.seek_to_first()
+
+        it.seek(b'hardhat-block-')
         self.recent_blocks = []
         for key, value_json in it:
+            print(key)
+            if not key.startswith(b'hardhat-block-'):
+                break
             # self.write('%s %s<br>' % (key, value_json))
             _, _, block_height, block_hash = key.decode('utf8').split('-')
             self.recent_blocks.append([block_height, block_hash])
+
+        it.seek(b'hardhat-transaction-')
+        self.recent_transactions = []
+        for key, value_json in it:
+            print(key)
+            if not key.startswith(b'hardhat-transaction-'):
+                break
+            _, _, tx_hash = key.decode('utf8').split('-')
+            self.recent_transactions.append([tx_hash, tx_hash])
+
         self.render('template/blocks.html')
 
 class BlockHandler(tornado.web.RequestHandler):
@@ -51,12 +65,13 @@ class BlockHandler(tornado.web.RequestHandler):
         global global_state
         global block_tx
         it = block_tx.iteritems()
+
         it.seek_to_first()
         self.recent_blocks = []
         for key, value_json in it:
-            # self.write('%s %s<br>' % (key, value_json))
-            _, _, block_height, block_hash = key.decode('utf8').split('-')
-            self.recent_blocks.append([block_height, block_hash])
+            self.write('%s %s<br>' % (key, value_json))
+            # _, _, tx_hash = key.decode('utf8').split('-')
+            # self.recent_blocks.append([tx_hash, tx_hash])
         self.render('template/block.html')
 
 class TxHandler(tornado.web.RequestHandler):
@@ -81,12 +96,22 @@ class MainHandler(tornado.web.RequestHandler):
         # self.add_header('access-control-allow-methods', 'OPTIONS, POST')
         # self.add_header('access-control-allow-origin', 'moz-extension://52ed146e-8386-4e74-9dae-5fe4e9ae20c8')
 
-        data = json.loads(self.request.body)
-        info = data[0]
-        arg = data[1]
+        blk = json.loads(self.request.body)
         conn = database.get_conn_tx()
-        conn.put(('%s-block-%s-%s' % (info['chain'], info['block_number'], info['block_hash'])).encode('utf8'), b'[]')
-        funcs.process(info, arg)
+        conn.put(('%s-block-%s-%s' % (blk['chain'], blk['block_number'], blk['block_hash'])).encode('utf8'), b'[]')
+        # print(txs)
+        for data in blk['txs']:
+            print(data)
+            info = data[0]
+            info['block_number'] = blk['block_number']
+            info['block_hash'] = blk['block_hash']
+            info['chain'] = blk['chain']
+            arg = data[1]
+            conn.put(('%s-transaction-%s' % (blk['chain'], info['tx_hash'])).encode('utf8'), b'[]')
+            try:
+                funcs.process(info, arg)
+            except:
+                pass
         self.finish()
         # print(req['method'], req['params'])
 
