@@ -46,16 +46,16 @@ class BlocksHandler(tornado.web.RequestHandler):
                 break
             # self.write('%s %s<br>' % (key, value_json))
             _, _, block_height, block_hash = key.decode('utf8').split('-')
-            self.recent_blocks.append([block_height, block_hash])
+            self.recent_blocks.append([10**15-int(block_height), block_hash])
 
-        it.seek(b'hardhat-transaction-')
+        it.seek(b'hardhat-tx-')
         self.recent_transactions = []
         for key, value_json in it:
             print(key)
             if not key.startswith(b'hardhat-transaction-'):
                 break
-            _, _, tx_hash = key.decode('utf8').split('-')
-            self.recent_transactions.append([tx_hash, tx_hash])
+            _, _, tx_hash, block_hash = key.decode('utf8').split('-')
+            self.recent_transactions.append([tx_hash, block_hash])
 
         self.render('template/blocks.html')
 
@@ -66,12 +66,16 @@ class BlockHandler(tornado.web.RequestHandler):
         global block_tx
         it = block_tx.iteritems()
 
-        it.seek_to_first()
-        self.recent_blocks = []
+        it.seek(b'hardhat-blocktx-%s' % block_hash.encode('utf8'))
+        self.txs = []
         for key, value_json in it:
-            self.write('%s %s<br>' % (key, value_json))
-            # _, _, tx_hash = key.decode('utf8').split('-')
-            # self.recent_blocks.append([tx_hash, tx_hash])
+            print(key)
+            if not key.startswith(b'hardhat-blocktx-'):
+                break
+            # self.write('%s %s<br>' % (key, value_json))
+            _, _, block_hash, tx_hash = key.decode('utf8').split('-')
+            self.txs.append([block_hash, tx_hash])
+
         self.render('template/block.html')
 
 class TxHandler(tornado.web.RequestHandler):
@@ -79,13 +83,18 @@ class TxHandler(tornado.web.RequestHandler):
         tx_hash = self.get_argument('txhash')
         global global_state
         global block_tx
+
         it = block_tx.iteritems()
-        it.seek_to_first()
-        self.recent_blocks = []
+        it.seek(b'hardhat-tx-%s' % tx_hash.encode('utf8'))
+        self.txs = []
         for key, value_json in it:
+            print(key)
+            if not key.startswith(b'hardhat-tx-%s' % tx_hash.encode('utf8')):
+                break
+
             # self.write('%s %s<br>' % (key, value_json))
-            _, _, block_height, block_hash = key.decode('utf8').split('-')
-            self.recent_blocks.append([block_height, block_hash])
+            _, _, tx_hash, block_hash = key.decode('utf8').split('-')
+            self.txs.append([tx_hash, block_hash])
         self.render('template/tx.html')
 
 class MainHandler(tornado.web.RequestHandler):
@@ -98,7 +107,7 @@ class MainHandler(tornado.web.RequestHandler):
 
         blk = json.loads(self.request.body)
         conn = database.get_conn_tx()
-        conn.put(('%s-block-%s-%s' % (blk['chain'], blk['block_number'], blk['block_hash'])).encode('utf8'), b'[]')
+        conn.put(('%s-block-%s-%s' % (blk['chain'], 10**15 - blk['block_number'], blk['block_hash'])).encode('utf8'), b'[]')
         # print(txs)
         for data in blk['txs']:
             print(data)
@@ -107,7 +116,8 @@ class MainHandler(tornado.web.RequestHandler):
             info['block_hash'] = blk['block_hash']
             info['chain'] = blk['chain']
             arg = data[1]
-            conn.put(('%s-transaction-%s' % (blk['chain'], info['tx_hash'])).encode('utf8'), b'[]')
+            conn.put(('%s-blocktx-%s-%s' % (blk['chain'], blk['block_hash'], info['tx_hash'])).encode('utf8'), b'[]')
+            conn.put(('%s-tx-%s-%s' % (blk['chain'], info['tx_hash'], blk['block_hash'])).encode('utf8'), b'[]')
             try:
                 funcs.process(info, arg)
             except:

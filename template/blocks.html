@@ -7,8 +7,8 @@
     {% end for %}
     <br><br>
     Recent transactions<br>
-    {% for block_height, block_hash in handler.recent_transactions %}
-    {{ block_height }} <a href="/block?blockhash={{ block_hash }}">{{ block_hash }}</a><br>
+    {% for tx_hash, block_hash in handler.recent_transactions %}
+    <a href="/tx?txhash={{ tx_hash }}">{{ tx_hash }}</a> <a href="/block?blockhash={{ block_hash }}">{{ block_hash }}</a><br>
     {% end for %}
     <br><br>
 </body>

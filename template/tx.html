@@ -1,11 +1,10 @@
 <html>
 <head></head>
 <body>
-    Recent blocks<br>
-    {% for block_height, block_hash in handler.recent_blocks %}
-    {{ block_height }} {{ block_hash }}<br>
+    Tx<br>
+    {% for tx_hash, block_hash in handler.txs %}
+    {{ tx_hash }} {{ block_hash }}<br>
     {% end for %}
     <br><br>
-    Recent transactions<br>
 </body>
 </html>

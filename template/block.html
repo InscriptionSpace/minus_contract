@@ -1,9 +1,9 @@
 <html>
 <head></head>
 <body>
-    Recent blocks<br>
-    {% for block_height, block_hash in handler.recent_blocks %}
-    {{ block_height }} {{ block_hash }}<br>
+    block<br>
+    {% for block_hash, tx_hash in handler.txs %}
+    <a href="/tx?txhash={{ tx_hash }}">{{ tx_hash }}</a> {{ block_hash }}<br>
     {% end for %}
     <br><br>
 </body>
