@@ -1,5 +1,5 @@
 
 REVERSED_NO = 10**15
 
-chains = {'hardhat', 'eth'}
+chains = {'hardhat', 'evm'}
 assets = {'ETH', 'USDT'}

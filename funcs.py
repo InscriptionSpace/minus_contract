@@ -1,4 +1,4 @@
-# import json
+import json
 import hashlib
 import string
 import codeop
@@ -14,14 +14,14 @@ global_input = database.get_conn_tx()
 
 def hop(info, d):
     assert d['f'] == 'hop'
-    sender = info['sender']
+    sender = info['sender'].lower()
     from_chain = info['chain']
     from_txhash = info['tx_hash']
 
     chain = d['args'][0]
     assert chain in setting.chains
     block_number = int(d['args'][1])
-    asset = d['args'][3]
+    asset = d['args'][2]
     assert asset in setting.assets
     value = int(d['args'][3])
     assert value > 0
@@ -30,7 +30,8 @@ def hop(info, d):
     assert balance >= 0
     put(sender, asset, 'balance', balance, sender)
 
-    global_input.put(('%s-inject-%s-%s-%s' % (chain, block_number, from_chain, from_txhash)).encode('utf8'), b'[]')
+    to_sender = sender # in case sending to a chain with different 
+    global_input.put(('%s-inject-%s-%s-%s' % (chain, setting.REVERSED_NO - block_number, from_chain, from_txhash)).encode('utf8'), json.dumps([asset, to_sender, value]).encode('utf8'))
 
 def usdt_deposit(sender, d):
     assert d['f'] == 'usdt_deposit'
@@ -40,9 +41,9 @@ def eth_deposit(sender, d):
     value = int(d['args'][0])
     assert value > 0
     sender = sender.lower()
-    balance = get('eth', 'balance', 0, sender)
+    balance = get('ETH', 'balance', 0, sender)
     balance += value
-    put(sender, 'eth', 'balance', balance, sender)
+    put(sender, 'ETH', 'balance', balance, sender)
 
 # def withdraw(sender, d):
 #     assert d['f'] == 'withdraw'
@@ -182,6 +183,8 @@ def token_vote(sender, d):
     assert d['f'] == 'token_vote'
 
 def process(info, arg):
+    global global_input
+
     sender = info['sender']
     block_number = info['block_number']
     space.block_number = block_number
@@ -227,7 +230,7 @@ def process(info, arg):
         space.merge(block_hash)
 
     elif arg.get('f') == 'eth_deposit':
-        print('native eth_deposit')
+        print('native eth_deposit', info['invoke'])
         assert info['invoke'] == 'event'
         eth_deposit(sender, arg)
 
@@ -238,6 +241,23 @@ def process(info, arg):
     elif arg.get('f') == 'transfer':
         print('native transfer')
         transfer(sender, arg)
+
+    it = global_input.iteritems()
+    it.seek(('%s-inject-%s-' % (chain, setting.REVERSED_NO - block_number)).encode('utf8'))
+    for key, value_json in it:
+        print(key)
+        if not key.startswith(('%s-inject-%s-' % (chain, setting.REVERSED_NO - block_number)).encode('utf8')):
+            break
+
+        _, _, _, from_chain, from_tx_hash = key.decode('utf8').split('-')
+        to_asset, to_sender, to_value = json.loads(value_json)
+
+        print(from_chain, from_tx_hash, value_json)
+
+        to_balance = get(to_asset, 'balance', 0, to_sender)
+        assert to_value > 0
+        to_balance += to_value
+        put(to_sender, to_asset, 'balance', to_balance, to_sender)
 
     # print(state)
 

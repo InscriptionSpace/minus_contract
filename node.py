@@ -27,6 +27,7 @@ class Application(tornado.web.Application):
             (r"/blocks", BlocksHandler),
             (r"/block", BlockHandler),
             (r"/tx", TxHandler),
+            (r"/input", InputHandler),
             (r"/", MainHandler),
             ]
         settings = {"debug":True}
@@ -97,6 +98,25 @@ class TxHandler(tornado.web.RequestHandler):
             _, _, tx_hash, block_hash = key.decode('utf8').split('-')
             self.txs.append([tx_hash, block_hash])
         self.render('template/tx.html')
+
+class InputHandler(tornado.web.RequestHandler):
+    def get(self):
+        global global_state
+        global global_input
+
+        it = global_input.iteritems()
+        it.seek_to_first()
+        self.txs = []
+        for key, value_json in it:
+            print(key)
+            # if not key.startswith(b'hardhat-tx-%s' % tx_hash.encode('utf8')):
+            #     break
+
+            self.write('%s %s<br>' % (key, value_json))
+            # _, _, tx_hash, block_hash = key.decode('utf8').split('-')
+            # self.txs.append([tx_hash, block_hash])
+        # self.render('template/tx.html')
+        self.finish()
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
