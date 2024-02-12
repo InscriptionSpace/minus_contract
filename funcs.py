@@ -92,9 +92,37 @@ def approve(sender, d):
 # handle related
 def handle_reg(sender, d):
     assert d['f'] == 'handle_reg'
+    sender = sender.lower()
+    handle = d['args'][0]
+    assert type(handle) is str
+    assert set(handle) <= set(string.digits+string.ascii_lowercase+'_')
+    assert len(handle) >= 5 and len(handle) < 20
+
+    eth_address = get('handle', 'handle2eth', None, handle)
+    sender_handle = get('handle', 'eth2handle', None, sender)
+    assert eth_address is None and sender_handle is None
+
+    # payment required
+    put(sender, 'handle', 'handle2eth', sender, handle)
+    put(sender, 'handle', 'eth2handle', handle, sender)
+
+def handle_change(sender, d):
+    assert d['f'] == 'handle_change'
+
+    sender_handle = get('handle', 'eth2handle', None, sender)
+    assert sender_handle
+    eth_address = get('handle', 'handle2eth', None, sender_handle)
+
 
 def resolve(sender, d):
     assert d['f'] == 'resolve'
+    handle = d['args'][0]
+    assert type(handle) is str
+    assert set(handle) <= set(string.digits+string.ascii_lowercase+'_')
+    assert len(handle) >= 5 and len(handle) < 20
+
+    eth_address = get('handle', 'handle2eth', None, handle)
+    print('resolve', eth_address)
 
 def reverse(sender, d):
     assert d['f'] == 'reverse'
@@ -233,6 +261,14 @@ def process(info, arg):
         print('native eth_deposit', info['invoke'])
         assert info['invoke'] == 'event'
         eth_deposit(sender, arg)
+
+    elif arg.get('f') == 'resolve':
+        print('native resolve')
+        resolve(sender, arg)
+
+    elif arg.get('f') == 'handle_reg':
+        print('native handle_reg')
+        handle_reg(sender, arg)
 
     elif arg.get('f') == 'mint':
         print('native mint')
